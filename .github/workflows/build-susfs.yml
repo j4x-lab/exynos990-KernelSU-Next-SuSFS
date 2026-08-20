@@ -53,6 +53,17 @@ jobs:
           ln -sf /home/runner/tc/clang10/bin/ld.lld /home/runner/tc/gcc49/bin/aarch64-linux-android-ld.lld
           ls -la /home/runner/tc/gcc49/bin/
 
+      - name: Patch defconfig (remove firmware blobs)
+        run: |
+          # NPU.bin and valhall firmware blobs aren't in the kernel source.
+          # Blank EXTRA_FIRMWARE so the build doesn't fail linking them.
+          for f in arch/arm64/configs/exynos9830-*_defconfig; do
+            sed -i 's/^CONFIG_EXTRA_FIRMWARE=.*/CONFIG_EXTRA_FIRMWARE=""/' "$f"
+            sed -i 's|^CONFIG_EXTRA_FIRMWARE_DIR=.*|CONFIG_EXTRA_FIRMWARE_DIR=""|' "$f"
+            echo "patched $f:"
+            grep -n "^CONFIG_EXTRA_FIRMWARE" "$f"
+          done
+
       - name: Build kernel
         run: |
           CLANG_DIR=/home/runner/tc/clang10 GCC_DIR=/home/runner/tc/gcc49 ./build.sh -m ${{ github.event.inputs.model }}
