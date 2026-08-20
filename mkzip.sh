@@ -46,7 +46,7 @@ cp "$IMG" "$W/Image"
   echo 'do.cleanup=1'; echo 'do.cleanuponabort=0'
   i=1; for cn in $CODENAMES; do echo "device.name${i}=${cn}"; i=$((i+1)); done
   while [ "$i" -le 5 ]; do echo "device.name${i}="; i=$((i+1)); done
-  echo 'supported.versions=13'; echo 'supported.patchlevels='; echo 'supported.vendorpatchlevels='
+  echo 'supported.versions=13,14,15,16'; echo 'supported.patchlevels='; echo 'supported.vendorpatchlevels='
   echo "'"'; } # end properties'
   echo ''
   echo 'boot_attributes() {'
