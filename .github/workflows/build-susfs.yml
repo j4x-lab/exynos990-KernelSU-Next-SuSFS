@@ -73,6 +73,13 @@ jobs:
           fetch npu_perf/NPU_perf.bin.ihex firmware/npu_perf/NPU_perf.bin.ihex
           fetch npu_dn/NPU_dn.bin.ihex firmware/npu_dn/NPU_dn.bin.ihex
           find firmware -name "*.ihex" | sort
+          # kbuild's $(obj)/%: $(obj)/%.ihex rule breaks in O= out-of-tree builds,
+          # so pre-convert ihex -> bin with objcopy before building.
+          for f in $(find firmware -name "*.ihex"); do
+            objcopy -I ihex -O binary "$f" "${f%.ihex}" && rm "$f"
+          done
+          echo "=== converted bins ==="
+          find firmware -name "*.bin" -o -name "*.fw" | sort
           ls -la firmware/
 
       - name: Build kernel
