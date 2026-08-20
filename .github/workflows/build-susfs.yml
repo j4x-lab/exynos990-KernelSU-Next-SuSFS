@@ -59,7 +59,7 @@ jobs:
           # Android-Artisan exynos990 kernel tree; kbuild auto-converts ihex -> bin.
           BASE="https://raw.githubusercontent.com/Android-Artisan/android_kernel_samsung_exynos990"
           fetch() { curl -sfL "$BASE/master/firmware/$1" -o "$2" || curl -sfL "$BASE/main/firmware/$1" -o "$2" || { echo "MISS $1"; return 1; }; echo "OK $1"; }
-          mkdir -p firmware/tsp_sec firmware/npu
+          mkdir -p firmware/tsp_sec firmware/npu firmware/mfc firmware/key_stm firmware/npu_perf firmware/npu_dn
           fetch tsp_sec/y771_y2_ub.bin.ihex firmware/tsp_sec/y771_y2_ub.bin.ihex
           fetch tsp_sec/y79a_y2_ub.bin.ihex firmware/tsp_sec/y79a_y2_ub.bin.ihex
           fetch tsp_sec/y79a_y2.bin.ihex firmware/tsp_sec/y79a_y2.bin.ihex
@@ -68,7 +68,12 @@ jobs:
           fetch tsp_sec/y79a_z3.bin.ihex firmware/tsp_sec/y79a_z3.bin.ihex
           fetch npu/NPU.bin.ihex firmware/npu/NPU.bin.ihex
           fetch valhall-1691526.wa.ihex firmware/valhall-1691526.wa.ihex
-          ls -la firmware/tsp_sec/ firmware/npu/ firmware/valhall-1691526.wa.ihex
+          fetch mfc/mfc_fw_flash.bin.ihex firmware/mfc/mfc_fw_flash.bin.ihex
+          fetch key_stm/fsr1ad04_p2.fw.ihex firmware/key_stm/fsr1ad04_p2.fw.ihex
+          fetch npu_perf/NPU_perf.bin.ihex firmware/npu_perf/NPU_perf.bin.ihex
+          fetch npu_dn/NPU_dn.bin.ihex firmware/npu_dn/NPU_dn.bin.ihex
+          find firmware -name "*.ihex" | sort
+          ls -la firmware/
 
       - name: Build kernel
         run: |
