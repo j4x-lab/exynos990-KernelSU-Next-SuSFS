@@ -8,7 +8,7 @@ on:
         required: true
         default: "g985f"
         type: choice
-        options: [g985f, g980f, g988b, g986b, g981b]
+        options: [g985f, g980f, g988b, g986b, g985f]
 
 jobs:
   build:
@@ -25,18 +25,22 @@ jobs:
 
       - name: Download AOSP Clang r370808
         run: |
-          mkdir -p ../tc/clang10
-          wget -q "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/clang-r370808.tar.gz" -O clang.tar.gz
-          tar xzf clang.tar.gz -C ../tc/clang10
-          ls ../tc/clang10/bin/clang && ../tc/clang10/bin/clang --version | head -1
+          cd /home/runner
+          curl -sL "https://codeload.github.com/AOSP-10-CAF/prebuilts_clang_host_linux-x86_clang-r370808/zip/refs/heads/10" -o clang.zip
+          mkdir -p tc/clang10
+          unzip -q clang.zip
+          mv prebuilts_clang_host_linux-x86_clang-r370808-10/* tc/clang10/ 2>/dev/null || mv prebuilts_clang_host_linux-x86_clang-r370808-10/clang-r370808/* tc/clang10/
+          find tc/clang10 -name clang -type f | head -3
+          tc/clang10/bin/clang --version | head -1 || echo "CLANG MISSING - will inspect structure"
 
       - name: Clone GCC 4.9
         run: |
-          git clone --depth 1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 ../tc/gcc49
+          cd /home/runner
+          git clone --depth 1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 tc/gcc49
 
       - name: Build kernel
         run: |
-          ./build.sh -m ${{ github.event.inputs.model }}
+          CLANG_DIR=/home/runner/tc/clang10 GCC_DIR=/home/runner/tc/gcc49 ./build.sh -m ${{ github.event.inputs.model }}
 
       - name: Package zip
         run: |
