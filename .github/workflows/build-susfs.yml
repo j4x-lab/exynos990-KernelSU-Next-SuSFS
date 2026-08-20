@@ -1,0 +1,51 @@
+name: Build SUSFS Kernel
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "Device model"
+        required: true
+        default: "g985f"
+        type: choice
+        options: [g985f, g980f, g988b, g986b, g981b]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison flex git make gcc libssl-dev python3 zip gpg
+
+      - name: Download AOSP Clang r370808
+        run: |
+          mkdir -p ../tc/clang10
+          wget -q "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/clang-r370808.tar.gz" -O clang.tar.gz
+          tar xzf clang.tar.gz -C ../tc/clang10
+          ls ../tc/clang10/bin/clang && ../tc/clang10/bin/clang --version | head -1
+
+      - name: Clone GCC 4.9
+        run: |
+          git clone --depth 1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 ../tc/gcc49
+
+      - name: Build kernel
+        run: |
+          ./build.sh -m ${{ github.event.inputs.model }}
+
+      - name: Package zip
+        run: |
+          ./mkzip.sh -m ${{ github.event.inputs.model }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: susfs-kernel-${{ github.event.inputs.model }}
+          path: AnyKernel3_KSUNext_SUSFS_*.zip
+          if-no-files-found: error
+          retention-days: 7
