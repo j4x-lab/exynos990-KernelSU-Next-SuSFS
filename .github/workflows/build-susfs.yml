@@ -8,7 +8,7 @@ on:
         required: true
         default: "g985f"
         type: choice
-        options: [g985f, g980f, g988b, g986b, g985f]
+        options: [g985f, g980f, g988b, g986b, g981f]
 
 jobs:
   build:
@@ -22,6 +22,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y bc bison flex git make gcc libssl-dev python3 zip gpg
+          sudo apt-get install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
 
       - name: Download AOSP Clang r370808
         run: |
@@ -29,14 +30,28 @@ jobs:
           curl -sL "https://codeload.github.com/AOSP-10-CAF/prebuilts_clang_host_linux-x86_clang-r370808/zip/refs/heads/10" -o clang.zip
           mkdir -p tc/clang10
           unzip -q clang.zip
-          mv prebuilts_clang_host_linux-x86_clang-r370808-10/* tc/clang10/ 2>/dev/null || mv prebuilts_clang_host_linux-x86_clang-r370808-10/clang-r370808/* tc/clang10/
-          find tc/clang10 -name clang -type f | head -3
-          tc/clang10/bin/clang --version | head -1 || echo "CLANG MISSING - will inspect structure"
+          SRC=$(find . -maxdepth 1 -name "prebuilts_clang*" -type d | head -1)
+          echo "source dir: $SRC"
+          ls "$SRC"
+          # clang binary location varies by repo layout
+          if [ -d "$SRC/clang-r370808" ]; then SRC="$SRC/clang-r370808"; fi
+          cp -a "$SRC/." tc/clang10/
+          ls tc/clang10/bin/ | head
+          tc/clang10/bin/clang --version | head -1
 
-      - name: Clone GCC 4.9
+      - name: Set up ARM64 cross toolchain
         run: |
-          cd /home/runner
-          git clone --depth 1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 tc/gcc49
+          # Create android-prefixed symlinks to Ubuntu ARM64 tools
+          mkdir -p /home/runner/tc/gcc49/bin
+          cd /home/runner/tc/gcc49/bin
+          for t in as ld objcopy objdump strip ar nm ranlib readelf gcc g++ cpp; do
+            if [ -f /usr/bin/aarch64-linux-gnu-$t ]; then
+              ln -sf /usr/bin/aarch64-linux-gnu-$t aarch64-linux-android-$t
+            fi
+          done
+          # ld.lld from clang for linking
+          ln -sf /home/runner/tc/clang10/bin/ld.lld /home/runner/tc/gcc49/bin/aarch64-linux-android-ld.lld
+          ls -la /home/runner/tc/gcc49/bin/
 
       - name: Build kernel
         run: |
